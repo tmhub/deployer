@@ -66,11 +66,14 @@ task('deploy:update_code', function () {
     run(
         "cd {{deploy_path}}"
         . " && mv -f composer.json composer.json.old"
-        . " && $jq $jqOptions '.extra." . '"magento-root-dir" = "htdocs"'. "' composer.json.old  > composer.json"
+        // . " && $jq $jqOptions '.extra." . '"magento-root-dir" = "htdocs"'. "' composer.json.old  > composer.json"
+        . " && $jq $jqOptions '.extra.magentorootdir = " . '"htdocs"' . "' composer.json.old | sed -r 's/magentorootdir/magento-root-dir/g' > composer.json"
         . " && mv -f composer.json composer.json.old"
-        . " && $jq $jqOptions '.extra." . '"magento-deploystrategy" = "symlink"'. "' composer.json.old  > composer.json"
+        // . " && $jq $jqOptions '.extra." . '"magento-deploystrategy" = "symlink"'. "' composer.json.old  > composer.json"
+        . " && $jq $jqOptions '.extra.magentodeploystrategy = " . '"symlink"' . "' composer.json.old | sed -r 's/magentodeploystrategy/magento-deploystrategy/g' > composer.json"
         . " && mv -f composer.json composer.json.old"
-        . " && $jq $jqOptions '.extra." . '"magento-force"'. " = true' composer.json.old  > composer.json"
+        // . " && $jq $jqOptions '.extra." . '"magento-force"'. " = true' composer.json.old  > composer.json"
+        . " && $jq $jqOptions '.extra.magentoforce = true' composer.json.old | sed -r 's/magentoforce/magento-force/g' > composer.json"
         . " && rm composer.json.old"
     );
     $packages = [
@@ -79,15 +82,15 @@ task('deploy:update_code', function () {
         'magento-hackathon/magento-composer-installer:*'
     ];
     foreach ($packages as $package) {
-        run("$composer require -n --no-update $package");
+        run("cd {{deploy_path}} && $composer require -n --no-update $package");
     }
-    run("$composer update");
+    run("cd {{deploy_path}} && $composer update");
 
     $packages = env('option_package');
     foreach ($packages as $package) {
-        run("$composer require -n --no-update $package");
+        run("cd {{deploy_path}} && $composer require -n --no-update $package");
     }
-    run("$composer update");
+    run("cd {{deploy_path}} && $composer update");
 
     $packages = env('option_package');
     $package = current($packages);

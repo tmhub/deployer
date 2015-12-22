@@ -38,20 +38,20 @@ $ chmod +x /usr/local/bin/dep
 3. Download and install jq
 
 ```sh
-$sudo apt-get install jq
+$ sudo apt-get install jq
 ```
 or
 ```sh
-$chocolatey install jq
+$ chocolatey install jq
 ```
 or
 ```sh
-$git clone https://github.com/stedolan/jq.git
-$cd jq
-$autoreconf -i
-$./configure --disable-maintainer-mode
-$make
-$sudo make install
+$ git clone https://github.com/stedolan/jq.git
+$ cd jq
+$ autoreconf -i
+$ ./configure --disable-maintainer-mode
+$ make
+$ sudo make install
 ```
 
 4. Downoad tmhub/deployer
@@ -60,4 +60,3 @@ $sudo make install
 $ git clone git@github.com:tmhub/deployer.git
 $ cd deployer
 ```
-
