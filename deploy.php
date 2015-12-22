@@ -34,7 +34,8 @@ env('option_package', function () {
     }
     return $package;
 });
-task('deploy:update_code', function () {
+task('deploy:cleanup', function () {
+    run("if [ ! -d {{deploy_path}} ]; then mkdir -p {{deploy_path}}; fi");
     run(
         "cd {{deploy_path}}"
         . " && rm -rf composer.lock composer.json htdocs"
