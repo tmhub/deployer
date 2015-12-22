@@ -1,6 +1,10 @@
 <?php
+$deployPath = getcwd() . '/build';
+if (!is_dir($deployPath)) {
+    mkdir($deployPath);
+}
 localServer('local')
-    ->env('deploy_path', getcwd() . '/build')
+    ->env('deploy_path', $deployPath)
 ;
 
 option(
@@ -35,7 +39,7 @@ env('option_package', function () {
     return $package;
 });
 task('deploy:cleanup', function () {
-    run("if [ ! -d {{deploy_path}} ]; then mkdir -p {{deploy_path}}; fi");
+    //run("if [ ! -d {{deploy_path}} ]; then mkdir -p {{deploy_path}}; fi");
     run(
         "cd {{deploy_path}}"
         . " && rm -rf composer.lock composer.json htdocs"
