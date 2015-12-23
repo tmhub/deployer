@@ -135,3 +135,8 @@ task('deploy', [
     'deploy:composer_install',
     'deploy:zip'
 ])->desc('Deploy magento-module using magento-composer-installer');
+
+task('os', function () {
+    writeln(PHP_OS);
+    writeln(php_uname());
+});
