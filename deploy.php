@@ -33,6 +33,14 @@ env('jq', function () {
     return "$jq $jqOptions";
 });
 
+env('zip', function () {
+    run("if [ ! -d {{deploy_path}}/bin ]; then mkdir -p {{deploy_path}}/bin; fi");
+    if (!commandExist('zip')) {
+        run("sudo apt-get install zip");
+    }
+    return 'zip';
+});
+
 env('option_package', function () {
 
     $package = $default = ['tm/core:*'];
@@ -47,6 +55,7 @@ env('option_package', function () {
     }
     return $package;
 });
+
 task('deploy:cleanup', function () {
     run(
         "cd {{deploy_path}}"
@@ -54,48 +63,54 @@ task('deploy:cleanup', function () {
     );
 });
 
-task('deploy:update_code', function () {
+task('deploy:composer_init', function () {
     $release = date('YmdHis');
-    $composer = env('composer');
     run(
         "cd {{deploy_path}}"
-        . " && $composer init -n  --name='tm/demo{$release}' --type='magento-module' -s dev"
-        . " && $composer config repositories.firegento composer http://packages.firegento.com"
-        . " && $composer config repositories.tmhub composer http://tmhub.github.io/packages/"
-        . " && $composer config discard-changes true"
+        . " && {{composer}} init -n  --name='tm/demo{$release}' --type='magento-module' -s dev"
+        . " && {{composer}} config repositories.firegento composer http://packages.firegento.com"
+        . " && {{composer}} config repositories.tmhub composer http://tmhub.github.io/packages/"
+        . " && {{composer}} config discard-changes true"
     );
     run("if [ ! -d {{deploy_path}}/htdocs ]; then mkdir -p {{deploy_path}}/htdocs; fi");
 
-    $jq = env('jq');
     run(
         "cd {{deploy_path}}"
         . " && mv -f composer.json composer.json.old"
-        // . " && $jq '.extra." . '"magento-root-dir" = "htdocs"'. "' composer.json.old  > composer.json"
-        . " && $jq '.extra.magentorootdir = " . '"htdocs"' . "' composer.json.old | sed -r 's/magentorootdir/magento-root-dir/g' > composer.json"
+        . " && {{jq}} '.extra.magentorootdir = " . '"htdocs"' . "' composer.json.old "
+        . " | sed -r 's/magentorootdir/magento-root-dir/g' > composer.json"
         . " && mv -f composer.json composer.json.old"
-        // . " && $jq $jqOptions '.extra." . '"magento-deploystrategy" = "copy"'. "' composer.json.old  > composer.json"
-        . " && $jq '.extra.magentodeploystrategy = " . '"copy"' . "' composer.json.old | sed -r 's/magentodeploystrategy/magento-deploystrategy/g' > composer.json"
+        . " && {{jq}} '.extra.magentodeploystrategy = " . '"copy"' . "' composer.json.old"
+        . " | sed -r 's/magentodeploystrategy/magento-deploystrategy/g' > composer.json"
         . " && mv -f composer.json composer.json.old"
-        // . " && $jq '.extra." . '"magento-force"'. " = true' composer.json.old  > composer.json"
-        . " && $jq '.extra.magentoforce = true' composer.json.old | sed -r 's/magentoforce/magento-force/g' > composer.json"
+        . " && {{jq}} '.extra.magentoforce = true' composer.json.old"
+        . " | sed -r 's/magentoforce/magento-force/g' > composer.json"
         . " && rm composer.json.old"
     );
+});
+
+task('deploy:composer_require', function () {
     $packages = [
         'symfony/console:2.4',
         'magento-hackathon/composer-command-integrator:*',
         'magento-hackathon/magento-composer-installer:*'
     ];
     foreach ($packages as $package) {
-        run("cd {{deploy_path}} && $composer require -n --no-update $package");
+        run("cd {{deploy_path}} && {{composer}} require -n --no-update $package");
     }
-    run("cd {{deploy_path}} && $composer update");
+    run("cd {{deploy_path}} && {{composer}} update");
 
     $packages = env('option_package');
     foreach ($packages as $package) {
-        run("cd {{deploy_path}} && $composer require -n --no-update $package");
+        run("cd {{deploy_path}} && {{composer}} require -n --no-update $package");
     }
-    run("cd {{deploy_path}} && $composer update");
+});
 
+task('deploy:composer_install', function () {
+    run("cd {{deploy_path}} && {{composer}} update");
+});
+
+task('deploy:zip', function () {
     $packages = env('option_package');
     $package = current($packages);
     $version = '';
@@ -105,17 +120,12 @@ task('deploy:update_code', function () {
     list($vendor, $package) = explode('/', $package);
 
     if (empty($version) || '*' == $version) {
-        $version = run("cd {{deploy_path}}/vendor/$vendor/$package && git describe --abbrev=0 --tags")->toString();
+        $version = run("cd {{deploy_path}}/vendor/$vendor/$package && git describe --abbrev=0 --tags")
+            ->toString();
     }
     $filename = "$package-$version.zip";
 
-    run("if [ ! -d {{deploy_path}}/bin ]; then mkdir -p {{deploy_path}}/bin; fi");
-    if (!commandExist('zip')) {
-        run("sudo apt-get install zip");
-    }
-    $zip = 'zip';
-
-    run("cd {{deploy_path}}/htdocs  && $zip -r {{deploy_path}}/bin/$filename *");
+    run("cd {{deploy_path}}/htdocs  && {{zip}} -r {{deploy_path}}/bin/$filename *");
 });
 
 /**
@@ -123,8 +133,8 @@ task('deploy:update_code', function () {
  */
 task('deploy', [
     'deploy:cleanup',
-    'deploy:update_code'
+    'deploy:composer_init',
+    'deploy:composer_require',
+    'deploy:composer_install',
+    'deploy:zip'
 ])->desc('Deploy magento-module using magento-composer-installer');
-
-task('test', function () {
-});
