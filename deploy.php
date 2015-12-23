@@ -24,6 +24,15 @@ env('composer', function () {
     return $composer;
 });
 
+env('jq', function () {
+    if (!commandExist('jq')) {
+        run("sudo apt-get install jq");
+    }
+    $jq = 'jq';
+    $jqOptions = '';//'--indent 4';
+    return "$jq $jqOptions";
+});
+
 env('option_package', function () {
 
     $package = $default = ['tm/core:*'];
@@ -39,7 +48,6 @@ env('option_package', function () {
     return $package;
 });
 task('deploy:cleanup', function () {
-    //run("if [ ! -d {{deploy_path}} ]; then mkdir -p {{deploy_path}}; fi");
     run(
         "cd {{deploy_path}}"
         . " && rm -rf composer.lock composer.json htdocs"
@@ -58,22 +66,18 @@ task('deploy:update_code', function () {
     );
     run("if [ ! -d {{deploy_path}}/htdocs ]; then mkdir -p {{deploy_path}}/htdocs; fi");
 
-    if (!commandExist('jq')) {
-        run("sudo apt-get install jq");
-    }
-    $jq = 'jq';
-    $jqOptions = '';//'--indent 4';
+    $jq = env('jq');
     run(
         "cd {{deploy_path}}"
         . " && mv -f composer.json composer.json.old"
-        // . " && $jq $jqOptions '.extra." . '"magento-root-dir" = "htdocs"'. "' composer.json.old  > composer.json"
-        . " && $jq $jqOptions '.extra.magentorootdir = " . '"htdocs"' . "' composer.json.old | sed -r 's/magentorootdir/magento-root-dir/g' > composer.json"
+        // . " && $jq '.extra." . '"magento-root-dir" = "htdocs"'. "' composer.json.old  > composer.json"
+        . " && $jq '.extra.magentorootdir = " . '"htdocs"' . "' composer.json.old | sed -r 's/magentorootdir/magento-root-dir/g' > composer.json"
         . " && mv -f composer.json composer.json.old"
         // . " && $jq $jqOptions '.extra." . '"magento-deploystrategy" = "copy"'. "' composer.json.old  > composer.json"
-        . " && $jq $jqOptions '.extra.magentodeploystrategy = " . '"copy"' . "' composer.json.old | sed -r 's/magentodeploystrategy/magento-deploystrategy/g' > composer.json"
+        . " && $jq '.extra.magentodeploystrategy = " . '"copy"' . "' composer.json.old | sed -r 's/magentodeploystrategy/magento-deploystrategy/g' > composer.json"
         . " && mv -f composer.json composer.json.old"
-        // . " && $jq $jqOptions '.extra." . '"magento-force"'. " = true' composer.json.old  > composer.json"
-        . " && $jq $jqOptions '.extra.magentoforce = true' composer.json.old | sed -r 's/magentoforce/magento-force/g' > composer.json"
+        // . " && $jq '.extra." . '"magento-force"'. " = true' composer.json.old  > composer.json"
+        . " && $jq '.extra.magentoforce = true' composer.json.old | sed -r 's/magentoforce/magento-force/g' > composer.json"
         . " && rm composer.json.old"
     );
     $packages = [
