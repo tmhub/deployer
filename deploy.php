@@ -14,6 +14,21 @@ option(
     'Package to deploy. (Default: --package=tm/core:*)'
 );
 
+env('option_package', function () {
+
+    $package = $default = ['tm/core:*'];
+    if (input()->hasOption('package')) {
+        $package = input()->getOption('package');
+
+        if (empty($package)) {
+            $package = $default;
+        } else {
+            $package = explode(',', $package);
+        }
+    }
+    return $package;
+});
+
 env('composer', function () {
     if (commandExist('composer')) {
         $composer = 'composer';
@@ -41,26 +56,8 @@ env('zip', function () {
     return 'zip';
 });
 
-env('option_package', function () {
-
-    $package = $default = ['tm/core:*'];
-    if (input()->hasOption('package')) {
-        $package = input()->getOption('package');
-
-        if (empty($package)) {
-            $package = $default;
-        } else {
-            $package = explode(',', $package);
-        }
-    }
-    return $package;
-});
-
 task('deploy:cleanup', function () {
-    run(
-        "cd {{deploy_path}}"
-        . " && rm -rf composer.lock composer.json htdocs"
-    );
+    run("cd {{deploy_path}} && rm -rf composer.lock composer.json htdocs");
 });
 
 task('deploy:composer_init', function () {
