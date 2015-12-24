@@ -123,6 +123,8 @@ task('deploy:zip', function () {
     $filename = "$package-$version.zip";
 
     run("cd {{deploy_path}}/htdocs  && {{zip}} -r {{deploy_path}}/bin/$filename *");
+
+    writeln(run("ls -l {{deploy_path}}/bin/$filename"));
 });
 
 /**
