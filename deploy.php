@@ -14,6 +14,13 @@ option(
     'Package to deploy. (Default: --package=tm/core:*)'
 );
 
+option(
+    'output',
+    null,
+    \Symfony\Component\Console\Input\InputOption::VALUE_OPTIONAL,
+    'Output filename'
+);
+
 env('option_package', function () {
 
     $package = $default = ['tm/core:*'];
@@ -123,8 +130,14 @@ task('deploy:zip', function () {
     $filename = "$package-$version.zip";
 
     run("cd {{deploy_path}}/htdocs  && {{zip}} -r {{deploy_path}}/bin/$filename *");
-
     writeln(run("ls -l {{deploy_path}}/bin/$filename"));
+    if (input()->hasOption('output')) {
+        $output = input()->getOption('output');
+        if (!empty($output)) {
+            run("cp {{deploy_path}}/bin/$filename {{deploy_path}}/bin/$output");
+            writeln(run("ls -l {{deploy_path}}/bin/$output"));
+        }
+    }
 });
 
 /**
