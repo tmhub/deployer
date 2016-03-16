@@ -66,7 +66,7 @@ task('deploy:composer_init', function () {
         "cd {{deploy_path}}"
         . " && {{composer}} init -n  --name='tm/demo{$release}' --type='magento-module' -s dev"
         . " && {{composer}} config repositories.firegento composer http://packages.firegento.com"
-        . " && {{composer}} config repositories.tmhub composer http://tmhub.github.io/packages/"
+        . " && {{composer}} config repositories.tmhub composer https://tmhub.github.io/packages/"
         . " && {{composer}} config discard-changes true"
     );
     run("if [ ! -d {{deploy_path}}/htdocs ]; then mkdir -p {{deploy_path}}/htdocs; fi");
@@ -104,7 +104,7 @@ task('deploy:composer_require', function () {
 });
 
 task('deploy:composer_install', function () {
-    run("cd {{deploy_path}} && {{composer}} update");
+    run("cd {{deploy_path}} && {{composer}} update --prefer-source");
 });
 
 task('deploy:zip', function () {
