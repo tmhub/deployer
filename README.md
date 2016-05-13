@@ -10,6 +10,12 @@ $ dep deploy  --package="tm/ajaxsearch:*"
 $ ls build/bin
 ```
 
+```sh
+$ dep deploy --package="tm/email:*,tm/subscription-checker:*"
+$ mv /var/www/deploy/deployer/build/bin/email-1.1.3.zip /var/www/deploy/deployer/build/bin/email-1.1.3-swissup.zip
+$ dep deploy --package="tm/email:*"
+```
+
 ### Installation
 
 1. Install Deployer
