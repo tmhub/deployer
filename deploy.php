@@ -74,6 +74,7 @@ task('deploy:composer_init', function () {
         . " && {{composer}} init -n  --name='tm/demo{$release}' --type='magento-module' -s dev"
         . " && {{composer}} config repositories.firegento composer http://packages.firegento.com"
         . " && {{composer}} config repositories.tmhub composer https://tmhub.github.io/packages/"
+        . " && {{composer}} config repositories.swissup composer https://swissup.github.io/packages/"
         . " && {{composer}} config discard-changes true"
     );
     run("if [ ! -d {{deploy_path}}/htdocs ]; then mkdir -p {{deploy_path}}/htdocs; fi");
@@ -111,7 +112,35 @@ task('deploy:composer_require', function () {
 });
 
 task('deploy:composer_install', function () {
-    run("cd {{deploy_path}} && {{composer}} update --prefer-source");
+    run("cd {{deploy_path}} && {{composer}} update --prefer-source --no-autoloader --no-interaction");
+});
+
+task('deploy:swissup', function () {
+    $packages = env('option_package');
+    $package = current($packages);
+    $version = '';
+    if (strstr($package, ':')) {
+        list($package, $version) = explode(':', $package, 2);
+    }
+    list($vendor, $package) = explode('/', $package);
+    if ('swissup' != $vendor) {
+        return;
+    }
+    foreach ($packages as $package) {
+        if (strstr($package, ':')) {
+            list($package, $version) = explode(':', $package, 2);
+        }
+        list($vendor, $package) = explode('/', $package);
+
+        //https://github.com/swissup/composer-swissup/blob/master/src/Installer.php
+        $name = str_replace('-', '', ucwords($package, '-'));
+        $path = 'app/code/' . $vendor . '/' . $name . '/';
+
+        run(
+            "cd {{deploy_path}}/vendor/$vendor/$package && " .
+            "git checkout-index -a -f --prefix={{deploy_path}}/htdocs/$path"
+        );
+    }
 });
 
 task('deploy:zip', function () {
@@ -130,6 +159,7 @@ task('deploy:zip', function () {
     $filename = "$package-$version.zip";
 
     run("cd {{deploy_path}}/htdocs  && {{zip}} -r {{deploy_path}}/bin/$filename *");
+
     writeln(run("ls -l {{deploy_path}}/bin/$filename"));
     if (input()->hasOption('output')) {
         $output = input()->getOption('output');
@@ -148,6 +178,7 @@ task('deploy', [
     'deploy:composer_init',
     'deploy:composer_require',
     'deploy:composer_install',
+    'deploy:swissup',
     'deploy:zip'
 ])->desc('Deploy magento-module using magento-composer-installer');
 
